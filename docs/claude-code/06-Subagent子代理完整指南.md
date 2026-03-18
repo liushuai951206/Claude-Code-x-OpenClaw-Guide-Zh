@@ -5,8 +5,8 @@
 > - **作者**：老金
 > - **预计学时**：1-2小时
 > - **难度等级**：⭐⭐⭐ 中级
-> - **更新日期**：2026年2月
-> - **适用版本**：Claude Code v2.1+（验证于2026-02-26）
+> - **更新日期**：2026年3月
+> - **适用版本**：Claude Code v2.1+（验证于2026-03-18）
 
 ---
 
@@ -333,6 +333,55 @@ chmod +x install-agents.sh
 | [search-expert](https://github.com/VoltAgent/awesome-claude-code-subagents/blob/main/categories/10-research-analysis/search-expert.md) | 高级信息检索专家 |
 | [trend-analyst](https://github.com/VoltAgent/awesome-claude-code-subagents/blob/main/categories/10-research-analysis/trend-analyst.md) | 新兴趋势和预测专家 |
 | [data-researcher](https://github.com/VoltAgent/awesome-claude-code-subagents/blob/main/categories/10-research-analysis/data-researcher.md) | 数据发现与分析专家 |
+
+---
+
+# 第四部分：Agent Teams 多代理团队协作 🆕
+
+> **v2.1.78 新增**：Agent Teams 是子代理系统的进化版本，支持多个代理组成团队协同工作。
+
+**一句话理解**：如果说普通 Subagent 是"你指派一个助手去干活"，那 Agent Teams 就是"你组建一个项目组，分工合作"。
+
+## 核心概念
+
+| 概念 | 说明 | 类比 |
+|------|------|------|
+| **Team Lead** | 团队领导代理，负责分配任务和协调进度 | 项目经理 |
+| **Teammate** | 团队成员代理，执行具体任务并汇报 | 开发工程师 |
+| **TaskList** | 共享任务列表，所有成员可见进度和状态 | 看板 / Trello |
+| **SendMessage** | 代理间通信机制，支持直接消息和广播 | 团队群聊 |
+
+## 与普通 Subagent/Task 的区别
+
+| 特性 | 普通 Subagent/Task | Agent Teams |
+|------|-------------------|-------------|
+| 协作模式 | 一对一（主代理 → 子代理） | 多对多（团队协作） |
+| 任务管理 | 各自独立，互不感知 | 共享任务列表，实时同步 |
+| 通信方式 | 子代理返回结果给主代理 | 团队成员间可互相通信 |
+| 生命周期 | 任务完成即退出 | 持续运行直到团队解散 |
+| 适用场景 | 独立子任务 | 复杂项目分工 |
+
+## 典型使用场景
+
+- **并行开发**：前端、后端、测试代理同时工作，通过 TaskList 共享进度
+- **代码审查分工**：安全审查、性能审查、风格审查代理并行检查，汇总结果
+- **大型重构**：多个模块同时修改，团队成员间协调接口变更
+
+## 快速示例
+
+```text
+# 在 Claude Code 中，使用自然语言请求创建团队
+You: 帮我组建一个团队，并行处理以下任务：
+     1. 重构用户认证模块
+     2. 编写 API 集成测试
+     3. 更新相关文档
+```
+
+Team Lead 会自动将任务分配给不同的 Teammate，各成员独立工作并通过 SendMessage 同步关键信息。
+
+> 💡 **何时用哪个？**
+> - **简单独立任务**（翻译文件、生成测试）→ 普通 Subagent/Task，更轻量
+> - **复杂协作项目**（多模块重构、全栈开发）→ Agent Teams，更强大
 
 ---
 

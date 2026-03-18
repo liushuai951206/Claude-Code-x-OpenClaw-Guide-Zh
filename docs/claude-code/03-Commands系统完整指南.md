@@ -5,8 +5,8 @@
 > - **作者**：老金
 > - **预计学时**：4-6小时
 > - **难度等级**：⭐⭐ 入门级
-> - **更新日期**：2026年2月
-> - **适用版本**：Claude Code v2.1+（验证于2026-02-25）
+> - **更新日期**：2026年3月
+> - **适用版本**：Claude Code v2.1+（验证于2026-03-18）
 > - **信息来源**：[官方文档](https://docs.anthropic.com/en/docs/claude-code/slash-commands) | [Claude Command Suite](https://github.com/qdhenry/Claude-Command-Suite) | [最佳实践](https://www.anthropic.com/engineering/claude-code-best-practices)
 > - **前置要求**：已完成Claude Code安装和基础使用
 
@@ -455,9 +455,11 @@ You: /hello
 |                      | `/resume`        | 恢复历史会话    | 继续之前的工作 |  ⭐  |
 |                      | `/export`        | 导出对话记录    | 保存重要对话   |      |
 |                      | `/rename`        | 重命名会话      | 整理会话列表   |      |
+|                      | `/branch`        | 创建会话分支    | 探索不同方案   |      |
 | **上下文控制** | `/context`       | 查看Token使用   | 监控上下文     |  ⭐  |
 |                      | `/cost`          | 查看费用统计    | 成本控制       |      |
 |                      | `/model`         | 切换AI模型      | 按需选模型     |  ⭐  |
+|                      | `/effort`        | 推理深度控制    | 调节AI思考深度 |  ⭐  |
 |                      | `/usage`         | 账户使用量      | 查看配额       |      |
 | **项目配置**   | `/init`          | 初始化CLAUDE.md | 新项目配置     |  ⭐  |
 |                      | `/memory`        | 编辑记忆文件    | 添加项目规则   |      |
@@ -473,8 +475,111 @@ You: /hello
 |                      | `/hooks`         | 管理Hooks       | 自动化触发     |  ⭐  |
 | **其他**       | `/help`          | 显示帮助        | 快速查命令     |  ⭐  |
 |                      | `/release-notes` | 更新日志        | 查看新功能     |      |
+|                      | `/loop`          | 定时循环执行    | 监控部署状态   |  ⭐  |
+|                      | `/sandbox`       | 沙箱隔离模式    | 安全执行       |      |
+|                      | `/color`         | 会话颜色设置    | 个性化         |      |
+|                      | `/copy`          | 复制AI回复      | 分享内容       |      |
 
 > 💡 **提示**：输入 `/` 然后按 `Tab` 键可以查看所有可用命令。
+
+### v2.1.69+ 新增命令详解 🆕
+
+以下命令是 Claude Code v2.1.69-v2.1.78 版本新增的功能：
+
+#### /loop - 定时循环执行
+
+**一句话理解**：就像设了一个"定时闹钟"——每隔一段时间自动执行你指定的任务。
+
+```bash
+/loop 5m check deployment status  # 每5分钟检查部署状态
+/loop 30s run tests               # 每30秒运行测试
+/loop 1h check for updates        # 每1小时检查更新
+```
+
+**语法**：`/loop <时间间隔> <提示词>`
+
+**时间格式**：数字 + 单位（`s`秒 / `m`分钟 / `h`小时）
+
+**注意事项**：
+- 只在REPL空闲时触发（不会打断你当前的工作）
+- 循环任务**3天后自动过期**，防止遗忘的任务持续运行
+- 使用 `Ctrl + C` 可以停止当前循环
+
+> 💡 **实用场景**：监控CI/CD部署进度、定期检查构建状态、轮询外部服务健康状况。
+
+#### /effort - 推理深度控制
+
+**一句话理解**：调整Claude的"思考深度"——简单问题快速回答，复杂问题深入分析。
+
+```bash
+/effort low     # ○ 快速简洁
+/effort medium  # ◐ 平衡模式（默认）
+/effort high    # ● 深度推理
+/effort auto    # 重置为自动判断
+```
+
+| 级别 | 符号 | Token消耗 | 适用场景 |
+|------|------|----------|---------|
+| low | ○ | 最少 | 简单问答、格式转换 |
+| medium | ◐ | 中等 | 日常开发、代码修改 |
+| high | ● | 较多 | 架构设计、复杂调试 |
+
+> 💡 **省钱技巧**：批量处理简单任务时切换到 `low`，关键决策时切换到 `high`。
+
+#### /sandbox - 沙箱隔离模式
+
+**一句话理解**：给Claude套上"安全围栏"——限制它能读写哪些文件、能不能访问网络。
+
+```bash
+/sandbox        # 启用OS级沙箱隔离
+```
+
+**隔离能力**：
+- **文件系统隔离**：限制可读写的目录范围
+- **网络隔离**：限制外部网络访问
+- **进程隔离**：OS级别的沙箱保护
+
+在 `settings.json` 中可以精细配置：
+
+```json
+{
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": ["/tmp", "./src"],
+      "allowRead": ["./", "/usr/lib"],
+      "denyRead": [".env", "credentials.json"]
+    }
+  }
+}
+```
+
+> ⚠️ **安全提示**：处理不信任的代码或敏感项目时，强烈建议启用沙箱模式。
+
+#### /color - 会话颜色设置
+
+```bash
+/color blue     # 设置会话窗口颜色为蓝色
+/color default  # 重置为默认颜色
+```
+
+> 💡 **多窗口区分**：同时开多个Claude Code会话时，用不同颜色区分（比如：蓝色=前端、绿色=后端）。
+
+#### /copy N - 复制AI回复
+
+```bash
+/copy           # 复制最新一条AI回复到剪贴板
+/copy 3         # 复制第3条AI回复到剪贴板
+```
+
+#### /branch - 会话分支
+
+```bash
+/branch         # 从当前位置创建会话分支
+```
+
+**一句话理解**：就像Git分支——在当前对话点"分叉"，探索不同方案而不影响原对话。
+
+> 💡 **提示**：这是原 `/fork` 命令的重命名版本。适合在关键决策点创建分支，分别尝试方案A和方案B。
 
 ---
 
@@ -498,7 +603,7 @@ allowed-tools:
   - Read
   - Write
   - WebSearch
-model: claude-sonnet-4-6-20250929
+model: claude-sonnet-4-6
 ---
 
 # 公众号文章创作
@@ -600,7 +705,7 @@ allowed-tools:
   - Grep
 
 # 指定使用的模型
-model: claude-sonnet-4-6-20250929
+model: claude-sonnet-4-6
 
 # 禁用模型调用（用于纯文本替换命令）
 # disable-model-invocation: true
@@ -664,7 +769,7 @@ allowed-tools:
 **4. model（指定模型）**
 
 ```yaml
-model: claude-opus-4-5-20251101
+model: claude-opus-4-6
 ```
 
 作用：强制使用指定模型执行命令（覆盖当前会话模型）。
@@ -1331,7 +1436,7 @@ $ARGUMENTS 格式：<主题> [风格] [字数]
 
 ```yaml
 ---
-model: claude-opus-4-5-20251101
+model: claude-opus-4-6
 ---
 ```
 
@@ -1754,9 +1859,11 @@ allowed-tools:
 |                    | `/resume`        | 恢复会话      |
 |                    | `/export`        | 导出对话      |
 |                    | `/rename`        | 重命名会话    |
+|                    | `/branch`        | 创建会话分支  |
 | **上下文**   | `/context`       | 查看Token使用 |
 |                    | `/cost`          | 查看费用      |
 |                    | `/model`         | 切换模型      |
+|                    | `/effort`        | 推理深度控制  |
 |                    | `/usage`         | 使用量统计    |
 | **项目**     | `/init`          | 初始化项目    |
 |                    | `/memory`        | 编辑记忆      |
@@ -1772,6 +1879,10 @@ allowed-tools:
 |                    | `/hooks`         | 管理Hooks     |
 | **其他**     | `/help`          | 显示帮助      |
 |                    | `/release-notes` | 更新日志      |
+|                    | `/loop`          | 定时循环执行  |
+|                    | `/sandbox`       | 沙箱隔离模式  |
+|                    | `/color`         | 会话颜色设置  |
+|                    | `/copy`          | 复制AI回复    |
 
 ### frontmatter配置速查
 
@@ -1787,7 +1898,7 @@ allowed-tools:
   - WebSearch
   - Glob
   - Grep
-model: claude-sonnet-4-6-20250929
+model: claude-sonnet-4-6
 version: 1.0.0
 author: 作者名
 ---
@@ -1927,20 +2038,32 @@ allowed-tools:
 
 ---
 
-**文档版本**：v1.1（Critical Thinking审查修正版）
-**最后更新**：2026年2月25日
+**文档版本**：v1.2（新增6个内置命令）
+**最后更新**：2026年3月18日
 **作者**：老金
 
 ---
 
 ### 版本更新日志
 
+#### V1.2 新增内容（2026-03-18）
+
+| 新增项 | 说明 |
+|--------|------|
+| `/loop` 命令 | 定时循环执行，支持 s/m/h 时间格式，3天自动过期 |
+| `/effort` 命令 | 推理深度控制，low/medium/high/auto 四级 |
+| `/sandbox` 命令 | OS级沙箱隔离，限制文件系统和网络访问 |
+| `/color` 命令 | 会话颜色个性化设置，多窗口区分 |
+| `/copy` 命令 | 一键复制AI回复到剪贴板 |
+| `/branch` 命令 | 会话分支（原 `/fork` 重命名），探索不同方案 |
+| 速查表更新 | 内置命令速查表和附录速查表同步补充新命令 |
+
 #### V1.1 修正内容（2025-12-23）
 
 | 修正项 | 问题 | 修正后 |
 |--------|------|--------|
-| 模型名称日期 | `claude-sonnet-4-5-20250514` 日期错误 | 修正为 `claude-sonnet-4-5-20250929` |
-| 模型名称日期 | `claude-opus-4-5-20250514` 日期错误 | 修正为 `claude-opus-4-5-20251101` |
+| 模型名称日期 | `claude-sonnet-4-5-20250514` 日期错误 | 修正为 `claude-sonnet-4-6` |
+| 模型名称日期 | `claude-opus-4-5-20250514` 日期错误 | 修正为 `claude-opus-4-6` |
 | frontmatter字段 | version/author误标为官方字段 | 明确标注为非官方字段 |
 | 内置命令覆盖 | 未说明核心命令受保护 | 添加重要澄清说明 |
 | 工具列表 | 缺少Task/NotebookEdit/TodoWrite | 补充完整工具列表 |

@@ -357,7 +357,7 @@ async def main():
 
     # 配置选项
     options = ClaudeAgentOptions(
-        model='claude-sonnet-4-6-20250929'  # Sonnet 4.6（推荐模型）
+        model='claude-sonnet-4-6'  # Sonnet 4.6（推荐模型）
     )
 
     # 执行查询，返回流式响应
@@ -406,7 +406,7 @@ async function main() {
   const stream: Query = query({
     prompt: '你好！请用一句话介绍你能做什么？',
     options: {
-      model: 'claude-sonnet-4-6-20250929'  // Sonnet 4.6(推荐)
+      model: 'claude-sonnet-4-6'  // Sonnet 4.6(推荐)
     }
   });
 
@@ -487,7 +487,7 @@ from claude_agent_sdk import ClaudeAgentOptions
 
 options = ClaudeAgentOptions(
     # 模型选择
-    model='claude-sonnet-4-6-20250929',  # Sonnet 4.6(推荐),也可选Opus 4.6或Haiku 4.5
+    model='claude-sonnet-4-6',  # Sonnet 4.6(推荐),也可选Opus 4.6或Haiku 4.5
 
     # 系统提示词（定义Agent的角色和行为）
     system_prompt='你是一个Python专家，专注于代码质量和最佳实践。',
@@ -830,7 +830,7 @@ async def analyze_code(file_path: str) -> None:
 
     # 配置Agent
     options = ClaudeAgentOptions(
-        model='claude-sonnet-4-6-20250929',
+        model='claude-sonnet-4-6',
         cwd=str(Path.cwd()),
         allowed_tools=['Read', 'Glob', 'Grep'],  # 只给读取权限
         max_turns=5,
@@ -913,7 +913,7 @@ async def run_multi_tool_agent(task: str) -> None:
     print("=" * 60)
 
     options = ClaudeAgentOptions(
-        model='claude-sonnet-4-6-20250929',  # Sonnet 4.6
+        model='claude-sonnet-4-6',  # Sonnet 4.6
         cwd=str(Path.cwd()),
         allowed_tools=['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep'],
         max_turns=15,
@@ -1086,7 +1086,7 @@ custom_tools = create_sdk_mcp_server(
 # Agent配置
 def get_options():
     return ClaudeAgentOptions(
-        model='claude-sonnet-4-6-20250929',  # Sonnet 4.6(推荐)
+        model='claude-sonnet-4-6',  # Sonnet 4.6(推荐)
         mcp_servers={"custom": custom_tools},
         allowed_tools=[
             "Read", "Write", "Bash",
@@ -1544,13 +1544,13 @@ async for message in query(prompt="...", options=options):
 
 | 场景 | 推荐模型 | 理由 |
 |------|---------|------|
-| 日常开发 | claude-sonnet-4-6-20250929 | 能力强、速度快、价格适中 |
-| 复杂推理 | claude-opus-4-6-20260210 | 最强能力，但价格高 |
-| 简单任务 | claude-haiku-4-5-20250414 | 最便宜，适合简单查询 |
+| 日常开发 | claude-sonnet-4-6 | 能力强、速度快、价格适中 |
+| 复杂推理 | claude-opus-4-6 | 最强能力，但价格高 |
+| 简单任务 | claude-haiku-4-5-20251001 | 最便宜，适合简单查询 |
 
 ```python
 # 性价比之选
-options = ClaudeAgentOptions(model='claude-sonnet-4-6-20250929')
+options = ClaudeAgentOptions(model='claude-sonnet-4-6')
 ```
 
 ---
@@ -1566,7 +1566,7 @@ options = ClaudeAgentOptions(model='claude-sonnet-4-6-20250929')
 
 ```python
 options = ClaudeAgentOptions(
-    model='claude-haiku-4-5-20250414',  # 便宜模型
+    model='claude-haiku-4-5-20251001',  # 便宜模型
     max_turns=5,  # 限制轮数
     system_prompt="简洁回复。"  # 简短提示
 )
@@ -1605,7 +1605,7 @@ options = ClaudeAgentOptions(
 ```python
 # 生产环境配置示例
 production_options = ClaudeAgentOptions(
-    model='claude-sonnet-4-6-20250929',  # 推荐模型
+    model='claude-sonnet-4-6',  # 推荐模型
     allowed_tools=['Read', 'Glob', 'Grep'],  # 最小权限
     permission_mode='default',  # 需要确认
     max_turns=10,
@@ -1774,14 +1774,14 @@ with open("session.json", "w") as f:
 
 **答**：支持Claude系列模型：
 
-- claude-opus-4-6-20260210（最强）
-- claude-sonnet-4-6-20250929（推荐）
-- claude-haiku-4-5-20250414（最快最便宜）
+- claude-opus-4-6（最强）
+- claude-sonnet-4-6（推荐）
+- claude-haiku-4-5-20251001（最快最便宜）
 
 通过`model`参数指定：
 
 ```python
-options = ClaudeAgentOptions(model='claude-sonnet-4-6-20250929')
+options = ClaudeAgentOptions(model='claude-sonnet-4-6')
 ```
 
 ---
@@ -1893,7 +1893,7 @@ async def rate_limited_query(prompts, delay=1.0):
 
 | 版本 | 日期 | 修改内容 |
 |------|------|----------|
-| V1.2 | 2026-02-26 | 更新模型引用：Opus 4.5→4.6（claude-opus-4-6-20260210）、Haiku 3.5→4（claude-haiku-4-20250414） |
+| V1.2 | 2026-02-26 | 更新所有模型引用至最新4.6版本：Sonnet 4.6（claude-sonnet-4-6）、Opus 4.6（claude-opus-4-6）、Haiku 4.5（claude-haiku-4-5-20251001） |
 | V1.1 | 2025-12-24 | 修正所有模型名称为最新4.5版本（claude-sonnet-4-5-20250929、claude-opus-4-5-20251101、claude-3-5-haiku-20241022） |
 | V1.0 | 2025-12-19 | 初版发布 |
 

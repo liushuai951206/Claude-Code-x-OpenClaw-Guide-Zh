@@ -467,7 +467,7 @@ sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
      -H "anthropic-version: 2023-06-01" \
      -H "content-type: application/json" \
      -d '{
-       "model": "claude-sonnet-4-6-20250929",
+       "model": "claude-sonnet-4-6",
        "max_tokens": 1024,
        "messages": [{"role": "user", "content": "Hello"}]
      }'
@@ -483,7 +483,7 @@ sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
        "anthropic-version" = "2023-06-01"
        "content-type" = "application/json"
    }
-   $body = '{"model":"claude-sonnet-4-6-20250929","max_tokens":1024,"messages":[{"role":"user","content":"Hello"}]}'
+   $body = '{"model":"claude-sonnet-4-6","max_tokens":1024,"messages":[{"role":"user","content":"Hello"}]}'
    Invoke-RestMethod -Uri "https://api.anthropic.com/v1/messages" -Method POST -Headers $headers -Body $body
    ```
 
@@ -3111,6 +3111,6 @@ rm ~/.asdf/shims/claude  # 如果你用asdf
 
 | 修正项 | 问题 | 修正后 |
 |--------|------|--------|
-| API测试模型名称 | `claude-sonnet-4-20250514` 格式和日期错误 | 修正为 `claude-sonnet-4-5-20250929` |
+| API测试模型名称 | `claude-sonnet-4-20250514` 格式和日期错误 | 修正为 `claude-sonnet-4-6` |
 
 > 💡 **审查方法**：基于官方Claude API文档验证模型名称准确性。

@@ -5,8 +5,8 @@
 > - **作者**：老金
 > - **预计学时**：4-6小时
 > - **难度等级**：⭐⭐ 入门级
-> - **更新日期**：2026年2月
-> - **适用版本**：Claude Code v2.1+（验证于2026-02-25）
+> - **更新日期**：2026年3月
+> - **适用版本**：Claude Code v2.1.69+（验证于2026-03-18）
 
 ---
 
@@ -69,7 +69,7 @@
 |------|------|------|
 | **Plugin** | Plugin | Claude Code的扩展包，可包含Commands+Skills+Hooks+MCP配置 |
 | **Marketplace** | Marketplace | Plugin商店，浏览和发现Plugin的网页平台 |
-| **plugin.json** | - | Plugin的元数据文件，定义名称、版本、能力等 |
+| **.claude-plugin/plugin.json** | - | Plugin的元数据清单文件，位于 `.claude-plugin/` 子目录中 |
 | **--plugin-dir** | - | Claude Code启动参数，指定加载Plugin的目录路径 |
 | **Skill** | Skill | Plugin中的核心能力模块（SKILL.md定义） |
 | **Hook** | Hook | Plugin中的自动化触发器（如代码提交前检查） |
@@ -140,7 +140,7 @@ Plugin = Commands + Skills + Hooks + MCP配置 + 文档
    - 搜索关键词：`claude-code-plugin`
    - 特点：最丰富的来源，质量参差不齐
 
-> ⚠️ **重要说明**：Claude Code **没有** `claude plugins` CLI子命令。Plugin的安装和管理通过文件系统操作（git clone + `--plugin-dir`）完成，不是通过命令行包管理器。
+> ⚠️ **重要说明**：Claude Code 没有 `claude plugins` 这样的CLI子命令。Plugin的安装有两种方式：(1) 在交互模式中使用 `/plugin install` 斜杠命令；(2) 手动 git clone + `--plugin-dir` 指定目录。
 
 ---
 
@@ -178,7 +178,9 @@ git clone https://github.com/jeremylongshore/claude-code-plugins-plus .claude/pl
 claude --plugin-dir .claude/plugins/plugins-plus
 ```
 
-Claude Code 会自动扫描该目录下的 `plugin.json`，加载其中定义的 Commands、Skills、Hooks。
+Claude Code 会自动扫描该目录下的 `.claude-plugin/plugin.json`，加载其中定义的 Commands、Skills、Hooks。
+
+> 💡 **开发小技巧**：开发Plugin时修改了文件，可以在交互模式中使用 `/reload-plugins` 重新加载，无需重启 Claude Code。
 
 **步骤3：验证Plugin已加载**
 
@@ -271,19 +273,19 @@ cd .claude/plugins/my-plugin && git pull
 cd .claude/plugins/my-plugin && git checkout v1.2.0
 
 # 查看Plugin信息
-cat .claude/plugins/my-plugin/plugin.json
+cat .claude/plugins/my-plugin/.claude-plugin/plugin.json
 ```
 
 ### 3.4 Plugin配置
 
-部分Plugin支持自定义配置。查看Plugin的 `plugin.json` 中的 `config` 字段：
+部分Plugin支持自定义配置。查看Plugin的 `.claude-plugin/plugin.json`：
 
 ```bash
-# 查看Plugin支持哪些配置项
-cat .claude/plugins/my-plugin/plugin.json | grep -A 20 '"config"'
+# 查看Plugin元数据
+cat .claude/plugins/my-plugin/.claude-plugin/plugin.json
 ```
 
-配置方式取决于Plugin的实现——通常是在 `.claude/settings.json` 中添加对应字段，或在Plugin目录下创建配置文件。具体请参考每个Plugin的README。
+配置方式取决于Plugin的实现——通常在Plugin目录下创建配置文件。具体请参考每个Plugin的README。
 
 ---
 
@@ -295,71 +297,52 @@ cat .claude/plugins/my-plugin/plugin.json | grep -A 20 '"config"'
 
 ```
 my-plugin/
-├── plugin.json          # 必需：Plugin元数据
+├── .claude-plugin/
+│   └── plugin.json      # 必需：Plugin元数据清单
+├── .mcp.json            # 可选：MCP配置
 ├── README.md            # 推荐：使用文档
 ├── skills/              # 可选：Agent Skills
 │   └── my-skill/
-│       ├── SKILL.md
-│       └── prompts/
+│       └── SKILL.md
 ├── commands/            # 可选：Slash Commands
 │   └── my-command.md
-├── hooks/               # 可选：Hooks
-│   └── pre-commit.py
-└── mcp/                 # 可选：MCP配置
-    └── mcp-config.json
+├── agents/              # 可选：Agent定义
+│   └── my-agent.md
+└── hooks/               # 可选：Hooks
+    └── pre-commit.py
 ```
 
-**plugin.json 规范**：
+**.claude-plugin/plugin.json 规范**：
 
 ```json
 {
   "name": "my-awesome-plugin",
-  "displayName": "My Awesome Plugin",
-  "version": "1.0.0",
   "description": "A plugin that does awesome things",
-  "author": {
-    "name": "Your Name",
-    "url": "https://github.com/yourname"
-  },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yourname/my-plugin"
-  },
-  "keywords": ["utility", "automation"],
-  "capabilities": {
-    "skills": true,
-    "commands": true,
-    "hooks": false,
-    "mcp": false
-  }
+  "version": "1.0.0",
+  "author": "Your Name"
 }
 ```
+
+> 💡 **注意**：`plugin.json` 必须放在 `.claude-plugin/` 子目录中，不是Plugin根目录。官方规范只要求 `name`、`description`、`version`、`author` 四个核心字段。
 
 ### 4.2 创建第一个Plugin：Hello World
 
 **步骤1：创建Plugin目录**
 
 ```bash
+mkdir -p hello-world-plugin/.claude-plugin
 mkdir -p hello-world-plugin/commands
 cd hello-world-plugin
 ```
 
-**步骤2：创建 plugin.json**
+**步骤2：创建 .claude-plugin/plugin.json**
 
 ```json
 {
   "name": "hello-world-plugin",
-  "displayName": "Hello World Plugin",
-  "version": "1.0.0",
   "description": "A simple hello world plugin for learning",
-  "author": {
-    "name": "Claude Student"
-  },
-  "license": "MIT",
-  "capabilities": {
-    "commands": true
-  }
+  "version": "1.0.0",
+  "author": "Claude Student"
 }
 ```
 
@@ -420,7 +403,8 @@ You: /hello
 
 ```
 code-review-plugin/
-├── plugin.json
+├── .claude-plugin/
+│   └── plugin.json
 ├── README.md
 ├── commands/
 │   └── review.md
@@ -485,7 +469,7 @@ You: /review
 ### 5.1 发布前检查清单
 
 ```
-✅ plugin.json 字段完整（name, version, description, author）
+✅ .claude-plugin/plugin.json 字段完整（name, version, description, author）
 ✅ README.md 包含安装和使用说明
 ✅ 所有命令和Skills已测试通过
 ✅ 无硬编码密钥或敏感信息
@@ -542,15 +526,12 @@ git push --tags
 
 ```bash
 # 1. 确认路径正确
-ls /path/to/your/plugin/plugin.json
+ls /path/to/your/plugin/.claude-plugin/plugin.json
 
 # 2. 验证plugin.json格式
-cat /path/to/your/plugin/plugin.json | python3 -m json.tool
+cat /path/to/your/plugin/.claude-plugin/plugin.json | python3 -m json.tool
 
-# 3. 检查capabilities字段
-# 确保你需要的能力（commands/skills/hooks）设为true
-
-# 4. 使用debug模式启动
+# 3. 使用debug模式启动
 claude --plugin-dir /path/to/your/plugin --debug
 ```
 
@@ -562,7 +543,7 @@ claude --plugin-dir /path/to/your/plugin --debug
 |------|----------|
 | commands目录路径错误 | 确认在Plugin根目录下有 `commands/` 目录 |
 | 命令文件不是.md格式 | 命令文件必须是 `.md` 后缀 |
-| plugin.json中commands未启用 | 设置 `"capabilities": {"commands": true}` |
+| .claude-plugin/plugin.json 缺失 | 确认Plugin根目录下有 `.claude-plugin/plugin.json` |
 | 文件权限问题 | 确认文件可读：`chmod 644 commands/*.md` |
 
 ### 6.3 Skills不生效
@@ -597,9 +578,9 @@ claude --plugin-dir ./plugin-low-priority --plugin-dir ./plugin-high-priority
 
 ### Q2：有没有 `claude plugins install` 命令？
 
-**没有。** Claude Code 目前没有内置的Plugin包管理器CLI。安装Plugin的方式是：
-1. `git clone` 到本地
-2. 启动时用 `--plugin-dir` 指定路径
+Claude Code 没有 `claude plugins` 这样的CLI子命令，但在交互模式中有 `/plugin install` 斜杠命令。安装Plugin有两种方式：
+1. 在交互模式中使用 `/plugin install {plugin-name}` 安装
+2. `git clone` 到本地，启动时用 `--plugin-dir` 指定路径
 
 ### Q3：Plugin会访问我的代码吗？
 
@@ -668,12 +649,13 @@ alias claude='claude --plugin-dir ~/.claude/global-plugins/my-plugin'
 
 | 操作 | 命令 |
 |------|------|
-| **安装Plugin** | `git clone <url> .claude/plugins/<name>` |
+| **安装Plugin** | `/plugin install <name>` 或 `git clone <url>` |
 | **加载Plugin** | `claude --plugin-dir .claude/plugins/<name>` |
 | **加载多个** | `claude --plugin-dir ./a --plugin-dir ./b` |
 | **更新Plugin** | `cd .claude/plugins/<name> && git pull` |
 | **卸载Plugin** | `rm -rf .claude/plugins/<name>` |
-| **查看Plugin信息** | `cat .claude/plugins/<name>/plugin.json` |
+| **查看Plugin信息** | `cat .claude/plugins/<name>/.claude-plugin/plugin.json` |
+| **开发时重载** | 交互模式中使用 `/reload-plugins` |
 | **调试Plugin** | `claude --plugin-dir <path> --debug` |
 | **浏览Marketplace** | 浏览器访问 `code.claude.com/plugins` |
 
@@ -681,13 +663,17 @@ alias claude='claude --plugin-dir ~/.claude/global-plugins/my-plugin'
 
 ```
 my-plugin/
-├── plugin.json          # 必需：元数据
+├── .claude-plugin/
+│   └── plugin.json      # 必需：元数据清单
+├── .mcp.json            # 可选：MCP配置
 ├── README.md            # 推荐：文档
 ├── commands/*.md        # 可选：Slash命令
 ├── skills/*/SKILL.md    # 可选：Agent能力
-├── hooks/*.py           # 可选：自动化脚本
-└── mcp/*.json           # 可选：MCP配置
+├── agents/*.md          # 可选：Agent定义
+└── hooks/*.py           # 可选：自动化脚本
 ```
+
+> 💡 **命名空间**：Plugin中的Skills会自动添加命名空间前缀，格式为 `/plugin-name:skill-name`，避免与其他Plugin冲突。
 
 ---
 

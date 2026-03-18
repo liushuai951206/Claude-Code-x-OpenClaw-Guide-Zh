@@ -5,8 +5,8 @@
 > - **作者**：老金
 > - **预计学时**：4-6小时
 > - **难度等级**：⭐⭐ 入门级（有Claude Code基础即可）
-> - **更新日期**：2026年2月
-> - **适用版本**：Claude Code v2.1+（验证于2026-02-25）
+> - **更新日期**：2026年3月
+> - **适用版本**：Claude Code v2.1+（验证于2026-03-18）
 > - **前置要求**：已完成Claude Code安装和基础使用
 
 ---
@@ -17,7 +17,7 @@
 
 1. **理解Hooks的核心价值**：掌握Hooks与传统提示词的本质区别
 2. **配置第一个Hook**：5分钟内完成最简单的Hook配置并看到效果
-3. **掌握15种Hook类型**：PreToolUse、PostToolUse、UserPromptSubmit、SubagentStart、SubagentStop、WorktreeCreate、WorktreeRemove等全部类型
+3. **掌握20种Hook类型**：PreToolUse、PostToolUse、UserPromptSubmit、SubagentStart、SubagentStop、StopFailure、PostCompact、InstructionsLoaded、Elicitation等全部类型
 4. **实现自动化工作流**：Git提交检查、代码格式化、文件保护等实战场景
 5. **排查Hook故障**：独立解决90%的常见配置和执行问题
 6. **安全使用Hooks**：理解安全风险并正确配置权限
@@ -247,7 +247,7 @@ Claude处理提示词
 返回结果给用户
 ```
 
-**15种Hook类型触发时机**：
+**20种Hook类型触发时机**：
 
 | Hook类型 | 触发时机 | 典型用途 | 可否阻止后续操作 |
 |----------|----------|----------|-----------------|
@@ -266,6 +266,11 @@ Claude处理提示词
 | **TeammateIdle** 🆕 | 队友空闲时 | 任务分配、状态通知 | ❌ 否 |
 | **WorktreeCreate** | 工作树创建时 | 初始化工作树配置 | ❌ 否 |
 | **WorktreeRemove** | 工作树删除时 | 清理工作树资源 | ❌ 否 |
+| **StopFailure** 🆕 | API异常停止时 | 错误告警、日志记录 | ❌ 否 |
+| **PostCompact** 🆕 | 上下文压缩后 | 记录token变化 | ❌ 否 |
+| **InstructionsLoaded** 🆕 | 指令文件加载时 | 验证指令完整性 | ❌ 否 |
+| **Elicitation** 🆕 | MCP请求输入时 | 记录交互日志 | ❌ 否 |
+| **ElicitationResult** 🆕 | MCP输入完成时 | 验证输入数据 | ❌ 否 |
 
 ### 1.4 安全警告（重要！）
 
@@ -1776,6 +1781,196 @@ claude -w
 
 ---
 
+### 3.13 新增Hook事件类型 🆕
+
+> **v2.1+ 新增**：以下Hook类型进一步扩展了Claude Code的事件覆盖范围，让你能捕捉到更多关键时刻。
+>
+> 🎯 **生活类比**：如果之前的Hook是"门窗报警器"，这些新Hook就是"烟雾报警器、水浸传感器、燃气检测器"——覆盖了之前监控不到的异常场景。
+
+#### StopFailure（API异常停止时触发）
+
+**触发时机**：当API错误（429限流、401认证失败、500服务器错误等）导致会话异常停止时触发
+
+> ⚡ **与Stop的区别**：`Stop` 是正常结束（用户主动退出、任务完成），就像下班正常关灯锁门；`StopFailure` 是异常中断，就像突然停电——你需要知道发生了什么并采取措施。
+
+**典型用途**：
+- 发送告警通知（Slack/邮件/钉钉）
+- 记录错误日志用于后续分析
+- 触发自动重试或降级逻辑
+
+**配置示例**：
+
+```json
+{
+  "hooks": {
+    "StopFailure": [
+      {
+        "command": "python .claude/hooks/alert-on-failure.py",
+        "timeout": 10000
+      }
+    ]
+  }
+}
+```
+
+> 📝 **输入数据**：StopFailure的stdin JSON中包含 `error` 字段，携带具体的错误类型和消息，可用于区分限流、认证失败等不同场景。
+
+---
+
+#### PostCompact（上下文压缩后触发）
+
+**触发时机**：执行 `/compact` 命令或上下文自动压缩完成后触发
+
+> 🎯 **生活类比**：就像搬家后清点物品——压缩完成后，你想知道"丢掉了多少东西、还剩多少空间"。
+
+**典型用途**：
+- 记录压缩前后的token数量变化
+- 触发上下文恢复操作（如重新加载关键文件）
+- 日志记录用于监控上下文使用趋势
+
+**配置示例**：
+
+```json
+{
+  "hooks": {
+    "PostCompact": [
+      {
+        "command": "echo \"[$(date)] 上下文已压缩\" >> ~/.claude/compact.log",
+        "timeout": 5000
+      }
+    ]
+  }
+}
+```
+
+> ⚠️ **注意**：PostCompact 是**不可阻止**的Hook，压缩已经完成，你只能执行后续操作。与 `PreCompact`（压缩前）配合使用效果更佳。
+
+---
+
+#### InstructionsLoaded（指令文件加载时触发）
+
+**触发时机**：CLAUDE.md 等指令文件加载到上下文时触发
+
+> 🎯 **生活类比**：就像新员工入职时检查培训手册是否齐全——确保AI读到了正确且完整的指令。
+
+**典型用途**：
+- 验证指令文件的完整性和正确性
+- 记录哪些指令文件被加载（便于调试）
+- 触发项目特定的初始化操作
+
+**配置示例**：
+
+```json
+{
+  "hooks": {
+    "InstructionsLoaded": [
+      {
+        "command": "python .claude/hooks/verify-instructions.py",
+        "timeout": 5000
+      }
+    ]
+  }
+}
+```
+
+> 📝 **输入数据**：stdin JSON中包含已加载指令文件的路径列表，可用于检查关键指令文件是否缺失。
+
+---
+
+#### Elicitation 和 ElicitationResult（MCP交互输入）🆕
+
+> **v2.1+ 新增**：这两个Hook配合MCP Elicitation功能使用，让你能监控和管理MCP服务器与用户之间的交互输入。
+>
+> 🎯 **生活类比**：`Elicitation` 就像客服系统弹出问卷调查——MCP服务器需要向用户询问信息；`ElicitationResult` 就像用户填完问卷提交——你可以记录和验证填写的内容。
+
+**Elicitation — MCP请求输入时触发**
+
+**触发时机**：MCP服务器通过Elicitation API向用户发起交互输入请求时
+
+**典型用途**：
+- 记录MCP交互请求日志
+- 自动填充常用值（如默认配置）
+
+**ElicitationResult — 用户完成输入后触发**
+
+**触发时机**：用户完成MCP交互输入并提交后
+
+**典型用途**：
+- 验证用户输入数据的合法性
+- 记录交互结果用于审计
+- 触发后续自动化流程
+
+**配置示例**：
+
+```json
+{
+  "hooks": {
+    "Elicitation": [
+      {
+        "command": "echo \"MCP请求输入: $(date)\" >> ~/.claude/elicitation.log",
+        "timeout": 5000
+      }
+    ],
+    "ElicitationResult": [
+      {
+        "command": "python .claude/hooks/validate-elicitation.py",
+        "timeout": 5000
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 3.14 HTTP Hooks（远程Webhook集成）🆕
+
+> **v2.1+ 新增**：除了传统的Shell命令Hook，现在可以直接将Hook事件POST到远程URL，无需编写本地脚本。
+>
+> 🎯 **生活类比**：之前的Hook像是"自家装的门铃"——得自己接线、自己写响铃逻辑；HTTP Hook像是"接入物业监控中心"——事件发生时自动通知远程服务，你只管接收处理。
+
+**配置格式**：
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "http",
+        "url": "https://your-webhook.example.com/hook",
+        "timeout": 5000
+      }
+    ]
+  }
+}
+```
+
+**工作原理**：
+- 当Hook事件触发时，Claude Code 自动向配置的URL发送 **POST** 请求
+- 请求体为JSON格式，自动包含该Hook的标准输入数据（与Shell Hook的stdin内容相同）
+- 支持设置超时时间，防止远程服务无响应时阻塞工作流
+
+**Shell Hook vs HTTP Hook 对比**：
+
+| 特性 | Shell Hook | HTTP Hook 🆕 |
+|------|-----------|-------------|
+| 执行方式 | 运行本地脚本/命令 | POST JSON到远程URL |
+| 需要本地脚本 | ✅ 是 | ❌ 否 |
+| 跨平台一致性 | ❌ 需处理OS差异 | ✅ 任何平台行为一致 |
+| 适合场景 | 本地文件操作、代码检查 | 远程通知、日志收集、CI/CD |
+| 网络依赖 | ❌ 无 | ✅ 需要网络连接 |
+| 配置复杂度 | 中（需写脚本） | 低（只需URL） |
+
+**适用场景**：
+- **Slack/Discord通知**：代码提交、构建完成时自动发送消息
+- **CI/CD触发**：Hook事件触发远程构建管道
+- **日志收集服务**：将所有Hook事件发送到Datadog/ELK等平台
+- **团队协作**：多人开发时自动同步状态到共享服务
+
+> ⚠️ **安全提示**：HTTP Hook会将Hook数据发送到外部服务，确保目标URL可信且使用HTTPS。避免在Hook数据中包含敏感信息（API密钥、密码等）。
+
+---
+
 ## 第四部分：实战应用场景
 
 > **本节目的**：学习真实项目中的Hook应用
@@ -2614,6 +2809,11 @@ git commit -m "Add Claude Code hooks"
 | TeammateIdle 🆕 | 队友空闲 | JSON | 无 | X |  |
 | WorktreeCreate | 工作树创建 | JSON | 无 | X |  |
 | WorktreeRemove | 工作树删除 | JSON | 无 | X |  |
+| StopFailure 🆕 | API异常停止 | JSON | 无 | X |  |
+| PostCompact 🆕 | 上下文压缩后 | JSON | 无 | X |  |
+| InstructionsLoaded 🆕 | 指令文件加载 | JSON | 无 | X |  |
+| Elicitation 🆕 | MCP请求输入 | JSON | 无 | X |  |
+| ElicitationResult 🆕 | MCP输入完成 | JSON | 无 | X |  |
 
 ### 常用工具名速查
 
